@@ -7,21 +7,50 @@ class Event(models.Model):
         FLIGHT = "flight", "Flight"
         OTHER = "other", "Other"
 
+    # Basic event info
     name = models.CharField(max_length=255)
     category = models.CharField(
         max_length=50,
         choices=Category.choices,
-        default=Category.SPORTS,
+        default=Category.OTHER,
     )
-    city = models.CharField(max_length=100)
+    genre = models.CharField(max_length=100, blank=True)
+    sub_genre = models.CharField(max_length=100, blank=True)
+
+    # Location
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
     venue = models.CharField(max_length=255, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    latitude = models.DecimalField(
+        max_digits=10,
+        decimal_places=7,
+        null=True,
+        blank=True,
+    )
+    longitude = models.DecimalField(
+        max_digits=10,
+        decimal_places=7,
+        null=True,
+        blank=True,
+    )
+
+    # Time
     event_date = models.DateTimeField()
 
+    # Source info
+    source = models.CharField(max_length=100, default="manual")
     source_url = models.URLField(blank=True)
-    external_id = models.CharField(max_length=255, blank=True)
+    external_id = models.CharField(max_length=255, blank=True, db_index=True)
+    image_url = models.URLField(blank=True)
 
+    # Raw API data, useful for debugging
+    raw_data = models.JSONField(null=True, blank=True)
+
+    # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
 
     class Meta:
         ordering = ["event_date"]
@@ -52,6 +81,12 @@ class PriceSnapshot(models.Model):
     )
 
     lowest_price = models.DecimalField(max_digits=10, decimal_places=2)
+    highest_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
     average_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,

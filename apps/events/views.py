@@ -3,6 +3,7 @@ from django.db.models import Avg, Min, Max, Count
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Event, Platform, PriceSnapshot, TrackedEvent
 from .serializers import (
@@ -12,6 +13,7 @@ from .serializers import (
     TrackedEventSerializer,
 )
 from apps.scrapers.mock import fetch_mock_price
+from apps.scrapers.ticketmaster import search_ticketmaster_events
 
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
@@ -113,7 +115,6 @@ class EventViewSet(viewsets.ModelViewSet):
             "snapshots": serializer.data,
         })
 
-
 class PlatformViewSet(viewsets.ModelViewSet):
     queryset = Platform.objects.all()
     serializer_class = PlatformSerializer
@@ -127,3 +128,26 @@ class PriceSnapshotViewSet(viewsets.ModelViewSet):
 class TrackedEventViewSet(viewsets.ModelViewSet):
     queryset = TrackedEvent.objects.all()
     serializer_class = TrackedEventSerializer
+
+
+class TicketmasterSearchView(APIView):
+    def get(self, request):
+        keyword = request.query_params.get("keyword")
+        city = request.query_params.get("city", "Chicago")
+        size = int(request.query_params.get("size", 10))
+
+        if not keyword:
+            return Response({"error": "keyword is required"}, status=400)
+
+        events = search_ticketmaster_events(
+            keyword=keyword,
+            city=city,
+            size=size,
+        )
+
+        return Response({
+            "keyword": keyword,
+            "city": city,
+            "count": len(events),
+            "results": events,
+        })
